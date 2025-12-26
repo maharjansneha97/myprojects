@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligent Environment Image Interpreter</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-brain"></i>
+                <h1>Intelligent Environment Image Interpreter</h1>
+            </div>
+            <p class="subtitle">Powered by YOLOv8 & ResNet-50 | BCA Final Year Project</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Upload Section -->
+            <section class="upload-section">
+                <div class="upload-box" id="uploadBox">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h2>Upload Environment Image</h2>
+                    <p>Drag and drop or click to select image</p>
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                    <button class="btn-primary" id="selectBtn">
+                        <i class="fas fa-folder-open"></i> Select Image
+                    </button>
+                    <div class="file-types">
+                        Supported: JPG, PNG, BMP, TIFF (Max 16MB)
+                    </div>
+                </div>
+
+                <!-- Preview -->
+                <div class="preview-section" id="previewSection" style="display: none;">
+                    <h3>Selected Image</h3>
+                    <img id="previewImage" src="" alt="Preview">
+                    <button class="btn-primary" id="analyzeBtn">
+                        <i class="fas fa-search"></i> Analyze Image
+                    </button>
+                    <button class="btn-secondary" id="cancelBtn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </section>
+
+            <!-- Loading Indicator -->
+            <div class="loading" id="loadingIndicator" style="display: none;">
+                <div class="spinner"></div>
+                <p>Processing image... Please wait</p>
+                <div class="progress-steps">
+                    <div class="step"><i class="fas fa-check"></i> Preprocessing</div>
+                    <div class="step"><i class="fas fa-check"></i> Object Detection</div>
+                    <div class="step"><i class="fas fa-check"></i> Scene Classification</div>
+                    <div class="step"><i class="fas fa-check"></i> Interpretation</div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <h2><i class="fas fa-chart-line"></i> Analysis Results</h2>
+                
+                <!-- Interpretation Card -->
+                <div class="card interpretation-card">
+                    <h3><i class="fas fa-comment-dots"></i> Environment Interpretation</h3>
+                    <p id="interpretationText" class="interpretation-text"></p>
+                    
+                    <div class="meta-info">
+                        <div class="meta-item">
+                            <span class="label">Scene Type:</span>
+                            <span id="sceneType" class="value"></span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="label">Objects Detected:</span>
+                            <span id="objectCount" class="value badge"></span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="label">Risk Level:</span>
+                            <span id="riskLevel" class="value badge"></span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="label">Confidence:</span>
+                            <span id="confidence" class="value badge"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Images Grid -->
+                <div class="images-grid">
+                    <div class="card">
+                        <h4>Original Image</h4>
+                        <img id="originalImage" src="" alt="Original">
+                    </div>
+                    <div class="card">
+                        <h4>Detected Objects</h4>
+                        <img id="annotatedImage" src="" alt="Annotated">
+                    </div>
+                </div>
+
+                <!-- Detected Objects List -->
+                <div class="card">
+                    <h3><i class="fas fa-list"></i> Detected Objects</h3>
+                    <div id="objectsList" class="objects-list"></div>
+                </div>
+
+                <!-- Activities & Use Cases -->
+                <div class="info-grid">
+                    <div class="card">
+                        <h3><i class="fas fa-running"></i> Suggested Activities</h3>
+                        <ul id="activitiesList" class="info-list"></ul>
+                    </div>
+                    <div class="card">
+                        <h3><i class="fas fa-lightbulb"></i> Potential Use Cases</h3>
+                        <ul id="useCasesList" class="info-list"></ul>
+                    </div>
+                </div>
+
+                <!-- Performance Metrics -->
+                <div class="card">
+                    <h3><i class="fas fa-tachometer-alt"></i> Performance Metrics</h3>
+                    <div id="performanceMetrics" class="metrics-grid"></div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="btn-primary" id="newAnalysisBtn">
+                        <i class="fas fa-plus"></i> Analyze Another Image
+                    </button>
+                    <button class="btn-secondary" id="downloadBtn">
+                        <i class="fas fa-download"></i> Download Results
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2024 Intelligent Environment Image Interpreter | BCA Major Project</p>
+            <p>Technologies: YOLOv8, ResNet-50, Flask, Python</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const uploadBox = document.getElementById('uploadBox');
+        const fileInput = document.getElementById('fileInput');
+        const selectBtn = document.getElementById('selectBtn');
+        const previewSection = document.getElementById('previewSection');
+        const previewImage = document.getElementById('previewImage');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const resultsSection = document.getElementById('resultsSection');
+        const newAnalysisBtn = document.getElementById('newAnalysisBtn');
+
+        let selectedFile = null;
+
+        // Event Listeners
+        selectBtn.addEventListener('click', () => fileInput.click());
+        
+        fileInput.addEventListener('change', handleFileSelect);
+        
+        uploadBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadBox.classList.add('drag-over');
+        });
+        
+        uploadBox.addEventListener('dragleave', () => {
+            uploadBox.classList.remove('drag-over');
+        });
+        
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadBox.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+        
+        analyzeBtn.addEventListener('click', analyzeImage);
+        cancelBtn.addEventListener('click', resetUpload);
+        newAnalysisBtn.addEventListener('click', resetUpload);
+
+        // Handle file selection
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        // Handle file
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file');
+                return;
+            }
+
+            selectedFile = file;
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                uploadBox.style.display = 'none';
+                previewSection.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Analyze image
+        async function analyzeImage() {
+            if (!selectedFile) return;
+
+            // Show loading
+            previewSection.style.display = 'none';
+            loadingIndicator.style.display = 'block';
+            resultsSection.style.display = 'none';
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                    resetUpload();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error analyzing image: ' + error.message);
+                resetUpload();
+            }
+        }
+
+        // Display results
+        function displayResults(data) {
+            loadingIndicator.style.display = 'none';
+            resultsSection.style.display = 'block';
+
+            const results = data.results;
+
+            // Interpretation
+            document.getElementById('interpretationText').textContent = results.interpretation;
+            document.getElementById('sceneType').textContent = results.scene_type;
+            document.getElementById('objectCount').textContent = results.object_count;
+            
+            // Risk level with color
+            const riskBadge = document.getElementById('riskLevel');
+            riskBadge.textContent = results.risk_level.toUpperCase();
+            riskBadge.className = 'value badge badge-' + results.risk_level;
+            
+            // Confidence
+            const confidenceBadge = document.getElementById('confidence');
+            confidenceBadge.textContent = (results.confidence * 100).toFixed(1) + '%';
+
+            // Images
+            document.getElementById('originalImage').src = '/uploads/' + data.filename;
+            document.getElementById('annotatedImage').src = data.annotated_image;
+
+            // Objects list
+            const objectsList = document.getElementById('objectsList');
+            objectsList.innerHTML = '';
+            
+            const objectCounts = {};
+            data.detections.forEach(det => {
+                objectCounts[det.class_name] = (objectCounts[det.class_name] || 0) + 1;
+            });
+
+            for (const [obj, count] of Object.entries(objectCounts)) {
+                const item = document.createElement('div');
+                item.className = 'object-item';
+                item.innerHTML = `
+                    <span class="object-name">${obj}</span>
+                    <span class="object-count">${count}</span>
+                `;
+                objectsList.appendChild(item);
+            }
+
+            // Activities
+            const activitiesList = document.getElementById('activitiesList');
+            activitiesList.innerHTML = '';
+            results.activities.forEach(activity => {
+                const li = document.createElement('li');
+                li.textContent = activity;
+                activitiesList.appendChild(li);
+            });
+
+            // Use cases
+            const useCasesList = document.getElementById('useCasesList');
+            useCasesList.innerHTML = '';
+            results.use_cases.forEach(useCase => {
+                const li = document.createElement('li');
+                li.textContent = useCase;
+                useCasesList.appendChild(li);
+            });
+
+            // Performance metrics
+            const metricsGrid = document.getElementById('performanceMetrics');
+            metricsGrid.innerHTML = '';
+            
+            for (const [metric, time] of Object.entries(data.performance)) {
+                const metricItem = document.createElement('div');
+                metricItem.className = 'metric-item';
+                metricItem.innerHTML = `
+                    <span class="metric-label">${metric}</span>
+                    <span class="metric-value">${time}</span>
+                `;
+                metricsGrid.appendChild(metricItem);
+            }
+
+            // Scroll to results
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Reset upload
+        function resetUpload() {
+            selectedFile = null;
+            fileInput.value = '';
+            previewSection.style.display = 'none';
+            loadingIndicator.style.display = 'none';
+            resultsSection.style.display = 'none';
+            uploadBox.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

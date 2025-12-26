@@ -1,0 +1,10 @@
+beach
+classroom
+forest
+gym
+kitchen
+living_room
+mountain
+office
+park
+street
