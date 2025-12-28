@@ -109,7 +109,7 @@ class ImagePreprocessor:
     
     def preprocess_for_detection(self, image_path):
         """
-        Complete preprocessing pipeline for object detection (YOLOv8)
+        Complete preprocessing pipeline for object detection (Custom Detector)
         
         Args:
             image_path: Path to input image

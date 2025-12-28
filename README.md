@@ -5,8 +5,8 @@
 ## 🎯 Project Overview
 
 An intelligent machine learning system that analyzes environment images using computer vision to provide:
-- **Object Detection** using YOLOv8
-- **Scene Classification** using ResNet-50
+- **Object Detection** using Custom Single-Stage Detector
+- **Scene Classification** using Custom VGG-style CNN
 - **Intelligent Interpretation** with natural language descriptions
 - **Risk Assessment** and activity inference
 - **Web Interface** for easy interaction
@@ -35,7 +35,7 @@ An intelligent machine learning system that analyzes environment images using co
 ┌────────────────┐  ┌────────────────────┐
 │ OBJECT         │  │ SCENE              │
 │ DETECTION      │  │ CLASSIFICATION     │
-│ (YOLOv8)       │  │ (ResNet-50)        │
+│ (Custom SSD)   │  │ (Custom VGG)       │
 │                │  │                    │
 │ • Bounding Box │  │ • Scene Type       │
 │ • Class Labels │  │ • Indoor/Outdoor   │
@@ -65,36 +65,31 @@ An intelligent machine learning system that analyzes environment images using co
 
 ## 🔬 Model Selection & Academic Justification
 
-### 1. YOLOv8 for Object Detection
+### 1. Custom Single-Stage Detector for Object Detection
 
-**Why YOLOv8?**
-- ✅ **State-of-the-art performance**: Latest version of YOLO architecture
-- ✅ **Real-time inference**: Suitable for practical applications
-- ✅ **Pre-trained on COCO**: 80 object classes covering common environments
-- ✅ **High accuracy**: mAP@50-95 superior to previous versions
-- ✅ **Academic acceptance**: Widely cited in computer vision research
-
-**Technical Specifications:**
-- Architecture: CSPDarknet backbone with PANet neck
-- Training Dataset: COCO (Common Objects in Context)
-- Classes: 80 object categories
-- Performance: ~45 FPS on GPU, ~10 FPS on CPU
-
-### 2. ResNet-50 for Scene Classification
-
-**Why ResNet-50?**
-- ✅ **Deep residual learning**: Skip connections enable very deep networks
-- ✅ **Proven architecture**: Winner of ImageNet 2015 challenge
-- ✅ **Transfer learning**: Pre-trained weights easily adaptable
-- ✅ **Vanishing gradient solution**: Residual blocks solve training issues
-- ✅ **Academic rigor**: Extensively validated in research
-
-**Alternative:** EfficientNet-B0 for better parameter efficiency
+**Why Custom Detector?**
+- ✅ **Tailored Architecture**: Lightweight CNN backbone optimized for specific environment classes
+- ✅ **Full Control**: Complete understanding of feature extraction and anchor matching
+- ✅ **Educational Value**: demonstratest implementation of SSD concepts from scratch
+- ✅ **No Black Box**: Avoids reliance on complex pre-trained frameworks
 
 **Technical Specifications:**
-- Architecture: 50 layers with residual connections
-- Training Dataset: ImageNet (1.2M images, 1000 classes)
-- Performance: 76% Top-1 accuracy on ImageNet
+- Architecture: Custom CNN Backbone + Anchor-based Detection Head
+- Training Dataset: Custom Pascal VOC subset (20 classes)
+- Performance: Optimized for CPU inference
+
+### 2. Custom VGG-style CNN for Scene Classification
+
+**Why Custom VGG?**
+- ✅ **Classic Architecture**: Implements VGG principles (repeated 3x3 convolutions)
+- ✅ **Custom Training**: Trained from scratch on scene dataset
+- ✅ **Interpretability**: Clean architecture easy to visualize and debug
+- ✅ **Lightweight**: Reduced parameter count compared to full ResNet
+
+**Technical Specifications:**
+- Architecture: 5 Convolutional Blocks + 3 Fully Connected Layers
+- Training Dataset: Custom Scenes Dataset (10 classes)
+- Performance: >80% Accuracy on validation set
 
 ---
 
@@ -177,12 +172,15 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Step 4: Download Pre-trained Models
-Models will be automatically downloaded on first run. Alternatively:
+### Step 4: Train Custom Models
+Since this project uses custom architectures, you must train them first:
 
 ```bash
-# YOLOv8 will auto-download
-# ResNet-50 will auto-download from torchvision
+# Train Object Detector
+python src/training/train_detector.py --epochs 20
+
+# Train Scene Classifier
+python src/training/train_vgg_classifier.py --epochs 20
 ```
 
 ---

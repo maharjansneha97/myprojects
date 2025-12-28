@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <div class="container">
         <!-- Header -->
@@ -15,7 +17,6 @@
                 <i class="fas fa-brain"></i>
                 <h1>Intelligent Environment Image Interpreter</h1>
             </div>
-            <p class="subtitle">Powered by YOLOv8 & ResNet-50 | BCA Final Year Project</p>
         </header>
 
         <!-- Main Content -->
@@ -65,12 +66,12 @@
             <!-- Results Section -->
             <section class="results-section" id="resultsSection" style="display: none;">
                 <h2><i class="fas fa-chart-line"></i> Analysis Results</h2>
-                
+
                 <!-- Interpretation Card -->
                 <div class="card interpretation-card">
                     <h3><i class="fas fa-comment-dots"></i> Environment Interpretation</h3>
                     <p id="interpretationText" class="interpretation-text"></p>
-                    
+
                     <div class="meta-info">
                         <div class="meta-item">
                             <span class="label">Scene Type:</span>
@@ -142,7 +143,7 @@
         <!-- Footer -->
         <footer class="footer">
             <p>© 2024 Intelligent Environment Image Interpreter | BCA Major Project</p>
-            <p>Technologies: YOLOv8, ResNet-50, Flask, Python</p>
+            <p>Technologies:Flask, Python</p>
         </footer>
     </div>
 
@@ -163,18 +164,18 @@
 
         // Event Listeners
         selectBtn.addEventListener('click', () => fileInput.click());
-        
+
         fileInput.addEventListener('change', handleFileSelect);
-        
+
         uploadBox.addEventListener('dragover', (e) => {
             e.preventDefault();
             uploadBox.classList.add('drag-over');
         });
-        
+
         uploadBox.addEventListener('dragleave', () => {
             uploadBox.classList.remove('drag-over');
         });
-        
+
         uploadBox.addEventListener('drop', (e) => {
             e.preventDefault();
             uploadBox.classList.remove('drag-over');
@@ -183,7 +184,7 @@
                 handleFile(files[0]);
             }
         });
-        
+
         analyzeBtn.addEventListener('click', analyzeImage);
         cancelBtn.addEventListener('click', resetUpload);
         newAnalysisBtn.addEventListener('click', resetUpload);
@@ -204,7 +205,7 @@
             }
 
             selectedFile = file;
-            
+
             // Show preview
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -260,12 +261,12 @@
             document.getElementById('interpretationText').textContent = results.interpretation;
             document.getElementById('sceneType').textContent = results.scene_type;
             document.getElementById('objectCount').textContent = results.object_count;
-            
+
             // Risk level with color
             const riskBadge = document.getElementById('riskLevel');
             riskBadge.textContent = results.risk_level.toUpperCase();
             riskBadge.className = 'value badge badge-' + results.risk_level;
-            
+
             // Confidence
             const confidenceBadge = document.getElementById('confidence');
             confidenceBadge.textContent = (results.confidence * 100).toFixed(1) + '%';
@@ -277,7 +278,7 @@
             // Objects list
             const objectsList = document.getElementById('objectsList');
             objectsList.innerHTML = '';
-            
+
             const objectCounts = {};
             data.detections.forEach(det => {
                 objectCounts[det.class_name] = (objectCounts[det.class_name] || 0) + 1;
@@ -314,7 +315,7 @@
             // Performance metrics
             const metricsGrid = document.getElementById('performanceMetrics');
             metricsGrid.innerHTML = '';
-            
+
             for (const [metric, time] of Object.entries(data.performance)) {
                 const metricItem = document.createElement('div');
                 metricItem.className = 'metric-item';
@@ -340,4 +341,5 @@
         }
     </script>
 </body>
+
 </html>
