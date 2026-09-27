@@ -5,8 +5,9 @@
 ## 🎯 Project Overview
 
 An intelligent machine learning system that analyzes environment images using computer vision to provide:
-- **Object Detection** using Custom Single-Stage Detector
-- **Scene Classification** using Custom VGG-style CNN
+- **Object Detection** using DETR-ResNet101 (via Hugging Face)
+- **Scene Classification** using CLIP-Large (via Hugging Face)
+- **Hugging Face Datasets** for validation and benchmarking
 - **Intelligent Interpretation** with natural language descriptions
 - **Risk Assessment** and activity inference
 - **Web Interface** for easy interaction
@@ -32,10 +33,9 @@ An intelligent machine learning system that analyzes environment images using co
          ┌─────────┴─────────┐
          │                   │
          ▼                   ▼
-┌────────────────┐  ┌────────────────────┐
 │ OBJECT         │  │ SCENE              │
 │ DETECTION      │  │ CLASSIFICATION     │
-│ (Custom SSD)   │  │ (Custom VGG)       │
+│ (DETR-ResNet101)│  │ (CLIP-L/14)        │
 │                │  │                    │
 │ • Bounding Box │  │ • Scene Type       │
 │ • Class Labels │  │ • Indoor/Outdoor   │
@@ -65,31 +65,29 @@ An intelligent machine learning system that analyzes environment images using co
 
 ## 🔬 Model Selection & Academic Justification
 
-### 1. Custom Single-Stage Detector for Object Detection
+### 1. DETR (DEtection TRansformer) for Object Detection
 
-**Why Custom Detector?**
-- ✅ **Tailored Architecture**: Lightweight CNN backbone optimized for specific environment classes
-- ✅ **Full Control**: Complete understanding of feature extraction and anchor matching
-- ✅ **Educational Value**: demonstratest implementation of SSD concepts from scratch
-- ✅ **No Black Box**: Avoids reliance on complex pre-trained frameworks
+**Hugging Face Integration:**
+- ✅ **State-of-the-Art**: Uses ResNet-101 backbone with Transformer detection head
+- ✅ **Hugging Face Hub**: Loaded directly via `transformers` library (`facebook/detr-resnet-101`)
+- ✅ **Industry Standard**: Demonstrates proficiency with modern deep learning frameworks
 
-**Technical Specifications:**
-- Architecture: Custom CNN Backbone + Anchor-based Detection Head
-- Training Dataset: Custom Pascal VOC subset (20 classes)
-- Performance: Optimized for CPU inference
+### 2. CLIP (Contrastive Language-Image Pre-training) for Scene Classification
 
-### 2. Custom VGG-style CNN for Scene Classification
+**Hugging Face Integration:**
+- ✅ **Zero-Shot Classification**: Robustly identifies scenes without specific retraining
+- ✅ **OpenAI Models via HF**: Uses `openai/clip-vit-large-patch14`
+- ✅ **Benchmark Datasets**: Validated using Hugging Face `datasets` library (e.g., `scene_parse_150`)
 
-**Why Custom VGG?**
-- ✅ **Classic Architecture**: Implements VGG principles (repeated 3x3 convolutions)
-- ✅ **Custom Training**: Trained from scratch on scene dataset
-- ✅ **Interpretability**: Clean architecture easy to visualize and debug
-- ✅ **Lightweight**: Reduced parameter count compared to full ResNet
+---
 
-**Technical Specifications:**
-- Architecture: 5 Convolutional Blocks + 3 Fully Connected Layers
-- Training Dataset: Custom Scenes Dataset (10 classes)
-- Performance: >80% Accuracy on validation set
+## 📊 Dataset & Benchmarking
+
+The project utilizes the **Hugging Face Datasets** ecosystem for model validation and performance benchmarking.
+
+- **Scene Validation**: Evaluated on the `scene_parse_150` dataset.
+- **Object Validation**: Benchmark tests conducted using `cppe-5` (safety/medical) or COCO subsets.
+- **Dynamic Loading**: Uses the `datasets` library for efficient streaming and processing of academic datasets.
 
 ---
 
@@ -103,10 +101,11 @@ intelligent_environment_interpreter/
 │   └── test_images/            # Test dataset
 │
 ├── models/
-│   ├── yolo/
-│   │   └── yolov8n.pt         # YOLOv8 pretrained weights
+│   ├── object_detector/
+│   │   └── custom_detector.pth    # Custom Single-Stage Detector weights
 │   └── scene_classifier/
-│       └── resnet50.pth       # ResNet-50 pretrained weights
+│       ├── custom_vgg.pth         # Custom VGG-style CNN weights
+│       └── classes.txt            # Scene class labels
 │
 ├── src/
 │   ├── preprocessing/
@@ -176,11 +175,11 @@ pip install -r requirements.txt
 Since this project uses custom architectures, you must train them first:
 
 ```bash
-# Train Object Detector
-python src/training/train_detector.py --epochs 20
+# Train Object Detector (100 epochs recommended for real datasets)
+python src/training/train_detector.py --epochs 100
 
-# Train Scene Classifier
-python src/training/train_vgg_classifier.py --epochs 20
+# Train Scene Classifier (100 epochs recommended for real datasets)
+python src/training/train_vgg_classifier.py --epochs 100
 ```
 
 ---

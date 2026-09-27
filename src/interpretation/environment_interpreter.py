@@ -20,24 +20,96 @@ class EnvironmentInterpreter:
     
     def __init__(self):
         """Initialize interpreter with reasoning rules"""
+        # Contextual Probabilities: What objects are UNLIKELY in which scenes
+        # Objects not in the 'probable' list will be suppressed if confidence < threshold
+        self.contextual_sane_checks = {
+            'Airport': ['aeroplane', 'bus', 'car', 'person', 'train'],
+            'Beach': ['boat', 'person', 'bird'],
+            'Commercial': ['car', 'bus', 'person', 'bicycle', 'motorbike'],
+            'DenseResidential': ['car', 'person', 'pottedplant', 'bicycle', 'motorbike'],
+            'Farmland': ['cow', 'sheep', 'horse', 'bird', 'person'],
+            'Forest': ['bird', 'cat', 'dog', 'person'],
+            'Industrial': ['car', 'bus', 'train', 'person'],
+            'Meadow': ['cow', 'sheep', 'horse', 'bird', 'person'],
+            'Mountain': ['bird', 'horse', 'aeroplane', 'person'],
+            'Park': ['person', 'dog', 'bicycle', 'bird'],
+            'Parking': ['car', 'bus', 'bicycle', 'person'],
+            'Port': ['boat', 'car', 'bus', 'person'],
+            'RailwayStation': ['train', 'person', 'bus'],
+            'River': ['boat', 'bird', 'person'],
+            'Street': ['car', 'bus', 'person', 'bicycle', 'motorbike'],
+            'Stadium': ['person'],
+            'Viaduct': ['train', 'car', 'bus', 'person'],
+            'MediumResidential': ['car', 'person', 'pottedplant', 'bicycle'],
+            'SparseResidential': ['car', 'person', 'pottedplant', 'horse', 'cow'],
+            'School': ['person', 'bus', 'car', 'bicycle'],
+            'Center': ['person', 'car', 'bus', 'bicycle']
+        }
         self.risk_keywords = {
-            'high': ['fire', 'weapon', 'knife', 'gun', 'smoke'],
-            'medium': ['car', 'motorcycle', 'truck', 'traffic', 'stairs'],
-            'low': ['person', 'chair', 'book', 'laptop']
+            'high': ['fire', 'weapon', 'procession'],
+            'medium': ['car', 'bus', 'motorbike', 'train', 'aeroplane', 'boat'],
+            'low': ['person', 'chair', 'bottle', 'sofa', 'diningtable', 'tvmonitor', 'pottedplant', 'bicycle', 'bird', 'cat', 'cow', 'dog', 'horse', 'sheep']
         }
         
         self.activity_inference = {
-            'office': ['working', 'meetings', 'desk work', 'computing'],
-            'kitchen': ['cooking', 'food preparation', 'dining', 'cleaning'],
-            'street': ['transportation', 'commuting', 'walking', 'traffic management'],
-            'classroom': ['learning', 'teaching', 'studying', 'lecturing'],
-            'gym': ['exercise', 'fitness', 'training', 'workout'],
-            'park': ['recreation', 'relaxation', 'outdoor activities', 'picnic'],
-            'beach': ['swimming', 'sunbathing', 'relaxation', 'water sports'],
-            'forest': ['hiking', 'nature exploration', 'photography', 'camping'],
-            'mountain': ['climbing', 'hiking', 'sightseeing', 'adventuring'],
-            'living_room': ['relaxing', 'socializing', 'watching TV', 'reading']
+            'Airport': ['air travel', 'logistics', 'transportation'],
+            'BareLand': ['land development', 'geographical observation'],
+            'BaseballField': ['sports', 'recreation'],
+            'Beach': ['recreation', 'tourism'],
+            'Bridge': ['transportation', 'infrastructure monitoring'],
+            'Center': ['urban activity', 'commerce'],
+            'Church': ['religious activities', 'community gathering'],
+            'Commercial': ['shopping', 'business transactions'],
+            'DenseResidential': ['urban living', 'housing'],
+            'Desert': ['environmental monitoring', 'exploration'],
+            'Farmland': ['agriculture', 'food production'],
+            'Forest': ['nature conservation', 'forestry'],
+            'Industrial': ['manufacturing', 'industrial production'],
+            'Meadow': ['grazing', 'nature observation'],
+            'MediumResidential': ['suburban living', 'housing'],
+            'Mountain': ['scenic viewing', 'hiking'],
+            'Park': ['recreation', 'leisure'],
+            'Parking': ['vehicle storage', 'urban logistics'],
+            'Playground': ['recreation', 'education'],
+            'Pond': ['ecology monitoring', 'recreation'],
+            'Port': ['shipping', 'logistics', 'trade'],
+            'RailwayStation': ['public transport', 'commuting'],
+            'Resort': ['tourism', 'vacationing'],
+            'River': ['water management', 'transportation'],
+            'School': ['education', 'learning'],
+            'SparseResidential': ['rural living', 'housing'],
+            'Square': ['public gathering', 'city life'],
+            'Stadium': ['sports events', 'large gatherings'],
+            'StorageTanks': ['resource storage', 'industrial logistics'],
+            'Viaduct': ['transportation', 'infrastructure']
         }
+        
+    def _filter_detections_by_context(self, detections, scene_info):
+        """
+        Filter detections that are highly unlikely in the given scene
+        """
+        primary_scene = scene_info.get('primary_scene', '').lower()
+        if primary_scene not in self.contextual_sane_checks:
+            return detections
+            
+        probable_objects = self.contextual_sane_checks[primary_scene]
+        filtered = []
+        
+        for det in detections:
+            obj_name = det['class_name'].lower()
+            confidence = det['confidence']
+            
+            # If object is not probable in this scene, it needs moderately high confidence to be kept
+            if obj_name not in probable_objects:
+                # Require 0.6 confidence for "out of context" objects (lowered from 0.85)
+                if confidence > 0.6:
+                    filtered.append(det)
+                else:
+                    print(f"DEBUG: Suppressing '{obj_name}' in '{primary_scene}' (conf: {confidence})")
+            else:
+                filtered.append(det)
+                
+        return filtered
     
     def interpret_environment(self, detection_results, classification_results, 
                             detailed=True):
@@ -54,6 +126,24 @@ class EnvironmentInterpreter:
         """
         detections = detection_results.get('detections', [])
         scene_info = classification_results
+        
+        # 0. Apply Contextual Sanity Filter
+        detections = self._filter_detections_by_context(detections, scene_info)
+        
+        # 0.5 Semantic Cross-Validation (Mismatched Scene Fix)
+        # If we see indoor/ground objects but the scene is aerial, override it.
+        ground_indicators = ['sofa', 'tvmonitor', 'chair', 'diningtable', 'bottle', 'pottedplant', 'cat', 'dog', 'bicycle', 'motorbike']
+        aerial_scenes = ['Airport', 'Stadium', 'Port', 'Viaduct', 'StorageTanks', 'Industrial', 'RailwayStation']
+        
+        detected_names = [d['class_name'].lower() for d in detections]
+        has_ground_objects = any(name in ground_indicators for name in detected_names)
+        
+        if has_ground_objects and scene_info.get('primary_scene') in aerial_scenes:
+            # Override with a generic indoor/ground label
+            print(f"DEBUG: Semantic Override! Scene was '{scene_info['primary_scene']}' but saw ground objects {detected_names}")
+            scene_info['primary_scene'] = 'Indoor/Home'
+            scene_info['scene_type'] = 'indoor'
+            scene_info['confidence'] = 0.9 # Force high confidence for the corrected label
         
         # Generate interpretation components
         scene_description = self._describe_scene(scene_info)
@@ -109,7 +199,11 @@ class EnvironmentInterpreter:
         primary_scene = scene_info.get('primary_scene', 'environment')
         confidence = scene_info.get('confidence', 0)
         
-        if scene_type == 'indoor':
+        # If confidence is very low, treat as generic ground environment
+        # to avoid forcing an aerial category on a standard photo
+        if confidence < 0.4:
+            description = "a generic environment"
+        elif scene_type == 'indoor':
             description = f"an indoor {primary_scene} environment"
         elif scene_type == 'outdoor':
             description = f"an outdoor {primary_scene} setting"
@@ -201,6 +295,13 @@ class EnvironmentInterpreter:
             else:
                 context_parts.append(f"{vehicle_count} vehicles are visible")
         
+        animal_count = sum(1 for d in detections if d['class_name'] == 'animal')
+        if animal_count > 0:
+            if animal_count == 1:
+                context_parts.append("an animal is present")
+            else:
+                context_parts.append(f"{animal_count} animals are present")
+        
         if not context_parts:
             return ""
         
@@ -217,22 +318,37 @@ class EnvironmentInterpreter:
             dict: Risk assessment
         """
         risk_score = 0
-        risk_factors = []
+        risk_factors = set()
         
+        # Object counts for density assessment
+        counts = {}
         for det in detections:
-            obj_name = det['class_name']
+            name = det['class_name']
+            counts[name] = counts.get(name, 0) + 1
             
-            # Check high risk objects
-            if any(keyword in obj_name.lower() 
-                   for keyword in self.risk_keywords['high']):
+        # 1. High Density Risk (Traffic/Crowds)
+        if counts.get('car', 0) > 10 or counts.get('bus', 0) > 3:
+            risk_score += 2
+            risk_factors.add("High traffic density")
+            
+        if counts.get('person', 0) > 15:
+            risk_score += 2
+            risk_factors.add("High crowd density")
+            
+        # 2. Specific Danger Scenarios (Proximity)
+        if 'aeroplane' in counts and 'bird' in counts:
+            risk_score += 3
+            risk_factors.add("Wildlife strike risk (Birds near aircraft)")
+            
+        # 3. Keyword based risks
+        for det in detections:
+            obj_name = det['class_name'].lower()
+            if any(k in obj_name for k in self.risk_keywords['high']):
                 risk_score += 3
-                risk_factors.append(f"Potential hazard: {obj_name}")
-            
-            # Check medium risk objects
-            elif any(keyword in obj_name.lower() 
-                     for keyword in self.risk_keywords['medium']):
+                risk_factors.add(f"Critical hazard: {det['class_name']}")
+            elif any(k in obj_name for k in self.risk_keywords['medium']):
                 risk_score += 1
-                risk_factors.append(f"Moderate concern: {obj_name}")
+                risk_factors.add(f"Moderate concern: {det['class_name']}")
         
         # Determine risk level
         if risk_score >= 3:
@@ -245,7 +361,7 @@ class EnvironmentInterpreter:
         return {
             'level': level,
             'score': risk_score,
-            'factors': risk_factors
+            'factors': sorted(list(risk_factors))
         }
     
     def _infer_activities(self, detections, scene_info):
@@ -269,17 +385,31 @@ class EnvironmentInterpreter:
         # Object-based activities
         object_names = [d['class_name'] for d in detections]
         
-        if 'laptop' in object_names or 'keyboard' in object_names:
-            activities.append('computer work')
+        if 'tvmonitor' in object_names:
+            activities.append('watching screen')
+            if scene_type == 'office':
+                activities.append('computer work')
         
-        if 'book' in object_names:
-            activities.append('reading')
+        if 'diningtable' in object_names:
+            activities.append('dining')
         
-        if any(v in object_names for v in ['car', 'truck', 'bus']):
+        if any(v in object_names for v in ['car', 'bus', 'train', 'motorbike']):
             activities.append('transportation')
+            
+        if 'bicycle' in object_names:
+            activities.append('cycling')
         
-        if 'sports ball' in object_names or 'tennis racket' in object_names:
-            activities.append('sports or recreation')
+        if any(a in object_names for a in ['cat', 'dog', 'horse']):
+            activities.append('interacting with animals')
+            
+        if any(a in object_names for a in ['cow', 'sheep']):
+            activities.append('grazing/farming')
+            
+        if 'boat' in object_names:
+            activities.append('boating/water travel')
+            
+        if 'aeroplane' in object_names:
+            activities.append('air travel')
         
         # Remove duplicates
         activities = list(set(activities))
@@ -319,8 +449,14 @@ class EnvironmentInterpreter:
         if person_count > 5:
             use_cases.append('Crowd density monitoring')
         
-        if any(d['class_name'] in ['car', 'truck', 'bus'] for d in detections):
+        if any(d['class_name'] in ['car', 'bus', 'motorbike', 'train'] for d in detections):
             use_cases.append('Vehicle tracking and management')
+
+        if any(d['class_name'] in ['cow', 'sheep', 'horse'] for d in detections):
+            use_cases.append('Livestock monitoring')
+            
+        if any(d['class_name'] in ['aeroplane', 'boat', 'train'] for d in detections):
+            use_cases.append('Transport logistics')
         
         return use_cases[:4]  # Top 4 use cases
     

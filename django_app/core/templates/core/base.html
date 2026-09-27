@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Environment Interpreter{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --bg: #fcfdff;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: #1f2937;
+        }
+
+        .card-shadow {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+        }
+
+        .header-gradient {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        }
+
+        .text-indigo-gradient {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+
+<body class="antialiased min-h-screen">
+    <!-- Navigation Bar -->
+    <nav class="bg-white/80 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
+            <a href="{% url 'index' %}" class="flex items-center gap-3 group">
+                <div
+                    class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200 group-hover:rotate-6 transition-transform">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <span class="font-black text-xl tracking-tight text-gray-900">Sneha<span
+                        class="text-indigo-600">AI</span></span>
+            </a>
+
+            <div class="flex items-center gap-8">
+                {% if user.is_authenticated %}
+                <div class="hidden md:flex items-center gap-6 text-sm font-bold text-gray-500">
+                    {% if not user.is_superuser %}
+                    <a href="{% url 'index' %}" class="hover:text-indigo-600 transition-colors">Analyzer</a>
+                    {% endif %}
+                    {% if not user.is_superuser %}
+                    <a href="{% url 'history' %}" class="hover:text-indigo-600 transition-colors">History</a>
+                    {% endif %}
+                </div>
+                <div class="h-8 w-[1px] bg-gray-100 mx-2 hidden md:block"></div>
+                <div class="flex items-center gap-3 pl-2">
+                    <div class="text-right hidden sm:block">
+                        <div class="text-xs font-black text-gray-900">{{ user.username }}</div>
+                        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Active Agent</div>
+                    </div>
+
+                    <button onclick="toggleDeleteAccountModal(true)"
+                        class="w-10 h-10 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-center text-gray-300 hover:text-rose-500 hover:bg-rose-50 hover:border-rose-100 transition-all group relative"
+                        title="Delete Account">
+                        <i class="fas fa-user-minus"></i>
+                    </button>
+
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit"
+                            class="w-10 h-10 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-center text-gray-400 hover:text-rose-500 hover:bg-rose-50 hover:border-rose-100 transition-all">
+                            <i class="fas fa-power-off"></i>
+                        </button>
+                    </form>
+                </div>
+                {% else %}
+                <div class="flex items-center gap-4">
+                    <a href="{% url 'login' %}"
+                        class="text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors">Login</a>
+                    <a href="{% url 'signup' %}"
+                        class="bg-indigo-600 text-white text-sm font-bold px-6 py-2.5 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">Sign
+                        Up</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Delete Account Confirmation Modal -->
+    <div id="delete-account-modal"
+        class="fixed inset-0 z-[100] hidden bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] max-w-sm w-full p-10 text-center shadow-2xl">
+            <div class="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-user-slash text-3xl"></i>
+            </div>
+            <h3 class="text-2xl font-black text-gray-900 mb-2">Delete Account?</h3>
+            <p class="text-gray-400 font-medium mb-10 leading-relaxed">This will permanently delete your profile and all
+                saved analysis history. This cannot be undone.</p>
+            <div class="flex flex-col gap-3">
+                <form action="{% url 'delete_account' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit"
+                        class="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-4 rounded-2xl transition-all">Yes,
+                        Delete My Account</button>
+                </form>
+                <button onclick="toggleDeleteAccountModal(false)"
+                    class="w-full bg-gray-50 hover:bg-gray-100 text-gray-500 font-bold py-4 rounded-2xl transition-all">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-4 py-12">
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="mt-20 text-center text-gray-400 text-sm py-10 border-t border-gray-100">
+        <p class="mb-2">© 2026 Intelligent Environment Image Interpreter</p>
+        <p class="font-medium text-gray-500">Built with Django + Tailwind</p>
+    </footer>
+
+    <script>
+        function toggleDeleteAccountModal(show) {
+            const modal = document.getElementById('delete-account-modal');
+            if (show) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

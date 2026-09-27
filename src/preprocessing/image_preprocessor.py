@@ -110,6 +110,7 @@ class ImagePreprocessor:
     def preprocess_for_detection(self, image_path):
         """
         Complete preprocessing pipeline for object detection (Custom Detector)
+        With edge enhancement (Sharpening + CLAHE) to help scratch-trained models
         
         Args:
             image_path: Path to input image
@@ -120,10 +121,18 @@ class ImagePreprocessor:
         # Load original image
         original = self.load_image(image_path)
         
-        # Apply noise reduction
-        denoised = self.reduce_noise(original)
+        # 1. Enhance Contrast using CLAHE
+        enhanced = self.enhance_image(original)
         
-        # Resize for YOLO (maintains aspect ratio internally)
+        # 2. Sharpen edges to help model find shapes
+        # Laplacian kernel for sharpening
+        kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
+        sharpened = cv2.filter2D(enhanced, -1, kernel)
+        
+        # 3. Apply noise reduction (after sharpening to prevent artifact amplification)
+        denoised = self.reduce_noise(sharpened)
+        
+        # 4. Resize for model
         processed = cv2.resize(denoised, self.target_size)
         
         return processed, original

@@ -1,0 +1,98 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Login - Environment Interpreter{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-20">
+    <div class="bg-white rounded-[2.5rem] card-shadow border border-gray-100 p-10 md:p-14">
+        <div class="text-center mb-10">
+            <div
+                class="inline-flex items-center justify-center w-16 h-16 mb-6 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100/50">
+                <i class="fas fa-sign-in-alt text-2xl"></i>
+            </div>
+            <h2 class="text-3xl font-black text-gray-900 mb-2">Welcome Back</h2>
+            <p class="text-gray-400">Secure entry to Analysis Suite</p>
+        </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div class="p-4 bg-rose-50 text-rose-600 text-xs font-bold rounded-xl border border-rose-100 mb-6">
+                {{ form.non_field_errors.0 }}
+            </div>
+            {% endif %}
+
+            <div>
+                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">
+                    Username
+                </label>
+                {{ form.username }}
+            </div>
+
+            <div>
+                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">
+                    Password
+                </label>
+                <div class="relative">
+                    {{ form.password }}
+                    <button type="button" onclick="togglePassword('id_password', this)"
+                        class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors">
+                        <i class="far fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-indigo-200 active:scale-[0.98] mt-4">
+                Access System
+            </button>
+        </form>
+
+        <script>
+            function togglePassword(fieldId, btn) {
+                const field = document.getElementById(fieldId);
+                const icon = btn.querySelector('i');
+                if (field.type === 'password') {
+                    field.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    field.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            }
+        </script>
+
+        <div class="mt-10 text-center border-t border-gray-50 pt-10">
+            <p class="text-sm text-gray-500 font-medium">
+                New to the platform?
+                <a href="{% url 'signup' %}"
+                    class="text-indigo-600 hover:text-indigo-700 font-bold ml-1 transition-colors">Create account</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    input {
+        width: 100%;
+        padding: 1rem 1.25rem;
+        background-color: #f9faff;
+        border: 1px solid #eef2ff;
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        color: #1f2937;
+    }
+
+    input:focus {
+        outline: none;
+        border-color: #c7d2fe;
+        background-color: #ffffff;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.05);
+    }
+</style>
+{% endblock %}
